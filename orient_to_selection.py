@@ -64,6 +64,7 @@ class OBJECT_OT_orient_to_selection(Operator):
 
 def draw_menu(self, context):
     if (bpy.context.scene.transform_orientation_slots[0].type == 'LOCAL' and bpy.context.edit_object):
+        self.layout.separator()
         self.layout.operator(OBJECT_OT_orient_to_selection.bl_idname)
 
 def register():
