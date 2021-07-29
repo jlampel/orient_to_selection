@@ -46,7 +46,14 @@ class OBJECT_OT_orient_to_selection(Operator):
         affect_children =   bpy.context.scene.tool_settings.use_transform_skip_children
 
         bpy.context.scene.transform_orientation_slots[0].type = 'NORMAL'
-        bpy.ops.transform.create_orientation(name="SELECTION", use=True)
+        try: 
+            bpy.ops.transform.create_orientation(name="SELECTION", use=True)
+        except:
+            bpy.context.scene.transform_orientation_slots[0].type = orientation
+            self.report({'WARNING'}, 
+                    "No orientation could be created because the normals of the selected items exactly cancel each other out"
+                )
+            return {'CANCELLED'}
         bpy.ops.object.mode_set(mode='OBJECT')
         bpy.context.scene.tool_settings.use_transform_skip_children = True
         bpy.context.scene.tool_settings.use_transform_data_origin = True
@@ -62,7 +69,7 @@ class OBJECT_OT_orient_to_selection(Operator):
 
         if obj.animation_data:
             self.report({'WARNING'}, 
-                "Warning - object has keyframes. Changing the local orientation will alter any animated rotation"
+                "This object has keyframes. Changing the local orientation will alter any animated rotation"
             )
 
         return {'FINISHED'}
