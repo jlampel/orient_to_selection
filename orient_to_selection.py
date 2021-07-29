@@ -60,6 +60,11 @@ class OBJECT_OT_orient_to_selection(Operator):
         bpy.ops.transform.delete_orientation()
         bpy.context.scene.transform_orientation_slots[0].type = orientation
 
+        if obj.animation_data:
+            self.report({'WARNING'}, 
+                "Warning - object has keyframes. Changing the local orientation will alter any animated rotation"
+            )
+
         return {'FINISHED'}
 
 def draw_menu(self, context):
