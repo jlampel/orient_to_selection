@@ -14,7 +14,7 @@
 bl_info = {
     "name": "Orient to Selected",
     "author": "Jonathan Lampel",
-    "version": (1, 0),
+    "version": (1, 1),
     "blender": (2, 93, 0),
     "location": "3D View > Edit Mode > Transform Orientations > Local",
     "description": "Aligns the object's orientation to the normal direction of your selection",

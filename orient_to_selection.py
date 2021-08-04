@@ -3,7 +3,7 @@ from bpy.types import (Operator)
 from bpy.props import (BoolProperty)
 
 class OBJECT_OT_orient_to_selection(Operator):
-    bl_label = "Orient to Selection"
+    bl_label = "Orient to Selected"
     bl_idname = "object.orient_to_selection"
     bl_description = "Aligns the object's local axes with the normals of the selected mesh"
     bl_space_type = "VIEW_3D"
