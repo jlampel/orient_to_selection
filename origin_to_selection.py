@@ -2,7 +2,7 @@ import bpy
 from bpy.types import (Operator)
 
 class OBJECT_OT_origin_to_selection(Operator):
-    bl_label = "Origin to Selection"
+    bl_label = "Origin to Selected"
     bl_idname = "object.origin_to_selection"
     bl_description = "Snaps the object's origin to the selected components in Edit Mode"
     bl_space_type = "VIEW_3D"
