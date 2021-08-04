@@ -23,13 +23,15 @@ bl_info = {
     "category": "3D View",
 }
 
-from . import orient_to_selection
+from . import orient_to_selection, origin_to_selection
 
 def register():
     orient_to_selection.register()
+    origin_to_selection.register()
 
 def unregister():
     orient_to_selection.unregister()
+    origin_to_selection.unregister()
 
 if __name__ == "__main__":
-    register()
+    register() 
