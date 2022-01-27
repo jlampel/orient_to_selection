@@ -19,6 +19,8 @@ class OBJECT_OT_orient_to_selection(Operator):
         orientation = bpy.context.scene.transform_orientation_slots[0].type
         edit_origin = bpy.context.scene.tool_settings.use_transform_data_origin
         affect_children =   bpy.context.scene.tool_settings.use_transform_skip_children
+        auto_keying = bpy.context.scene.tool_settings.use_keyframe_insert_auto
+
 
         bpy.context.scene.transform_orientation_slots[0].type = 'NORMAL'
         try: 
@@ -32,12 +34,14 @@ class OBJECT_OT_orient_to_selection(Operator):
         bpy.ops.object.mode_set(mode='OBJECT')
         bpy.context.scene.tool_settings.use_transform_skip_children = True
         bpy.context.scene.tool_settings.use_transform_data_origin = True
+        bpy.context.scene.tool_settings.use_keyframe_insert_auto = False
 
         bpy.context.view_layer.objects.active = obj
         bpy.ops.transform.transform(mode='ALIGN', orient_type='SELECTION', orient_matrix_type='SELECTION')
         
         bpy.context.scene.tool_settings.use_transform_skip_children = affect_children
         bpy.context.scene.tool_settings.use_transform_data_origin = edit_origin
+        bpy.context.scene.tool_settings.use_keyframe_insert_auto = auto_keying
         bpy.ops.object.mode_set(mode='EDIT')
         bpy.ops.transform.delete_orientation()
         bpy.context.scene.transform_orientation_slots[0].type = orientation
