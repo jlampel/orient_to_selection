@@ -5,12 +5,8 @@
 
 There's also an Origin to Selection operator to the Edit Mode -> Mesh -> Snap menu.
 
-If you'd like to donate to development, consider purchasing one of my other creations:
+If you'd like to support development of this and similar add-ons, please consider purchasing the add-on from our website or the Blender Market:
 
-[Extra Lights - Photometric Lighting for Cycles and Eevee](https://blendermarket.com/products/extra-lights)
+[blendermarket.com/products/orient-and-origin-to-selected](https://blendermarket.com/products/orient-and-origin-to-selected)
 
-[Scattershot - PBR Texture Bombing](https://blendermarket.com/products/scattershot---procedural-image-texture-scattering--tiling-with-voronoi)
-
-[Advanced Eevee Glass Shader](https://blendermarket.com/products/all-purpose-eevee-glass-shader)
-
-[32k Realistic Earth](https://blendermarket.com/products/hd-realistic-earth)
+[orangeturbine.com/downloads/orient-and-origin-to-selected](https://orangeturbine.com/downloads/orient-and-origin-to-selected)
