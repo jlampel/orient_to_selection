@@ -23,52 +23,71 @@ along with this program; if not, see <https://www.gnu.org/licenses/>.
 
 
 import bpy
-from bpy.types import (Operator)
-from bpy.props import (BoolProperty)
+from bpy.types import Operator
+
 
 class OBJECT_OT_orient_to_selection(Operator):
     bl_label = "Orient to Selected"
     bl_idname = "object.orient_to_selection"
     bl_description = "Aligns the object's local axes with the normals of the selected mesh"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
     bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
     def poll(cls, context):
-        return bpy.context.scene.transform_orientation_slots[0].type == 'LOCAL'
-            
+        return (
+            context.mode == 'EDIT_MESH'
+            and context.area is not None
+            and context.area.type == 'VIEW_3D'
+            and context.scene.transform_orientation_slots[0].type == 'LOCAL'
+        )
+
     def execute(self, context):
-        obj = bpy.context.edit_object
-        orientation = bpy.context.scene.transform_orientation_slots[0].type
-        edit_origin = bpy.context.scene.tool_settings.use_transform_data_origin
-        affect_children =   bpy.context.scene.tool_settings.use_transform_skip_children
-        auto_keying = bpy.context.scene.tool_settings.use_keyframe_insert_auto
+        obj = context.edit_object
+        slot = context.scene.transform_orientation_slots[0]
+        settings = context.scene.tool_settings
+        orientation = slot.type
+        edit_origin = settings.use_transform_data_origin
+        skip_children = settings.use_transform_skip_children
+        auto_keying = settings.use_keyframe_insert_auto
 
-
-        bpy.context.scene.transform_orientation_slots[0].type = 'NORMAL'
-        try: 
-            bpy.ops.transform.create_orientation(name="SELECTION", use=True)
-        except:
-            bpy.context.scene.transform_orientation_slots[0].type = orientation
-            self.report({'WARNING'}, 
-                    "No orientation could be created because the normals of the selected items exactly cancel each other out"
-                )
+        try:
+            result = bpy.ops.transform.create_orientation(name="SELECTION", use=True)
+        except RuntimeError as error:
+            self.report({'WARNING'}, f"Could not create an orientation from the selection: {error}")
             return {'CANCELLED'}
-        bpy.ops.object.mode_set(mode='OBJECT')
-        bpy.context.scene.tool_settings.use_transform_skip_children = True
-        bpy.context.scene.tool_settings.use_transform_data_origin = True
-        bpy.context.scene.tool_settings.use_keyframe_insert_auto = False
 
-        bpy.context.view_layer.objects.active = obj
-        bpy.ops.transform.transform(mode='ALIGN', orient_type='SELECTION', orient_matrix_type='SELECTION')
-        
-        bpy.context.scene.tool_settings.use_transform_skip_children = affect_children
-        bpy.context.scene.tool_settings.use_transform_data_origin = edit_origin
-        bpy.context.scene.tool_settings.use_keyframe_insert_auto = auto_keying
-        bpy.ops.object.mode_set(mode='EDIT')
-        bpy.ops.transform.delete_orientation()
-        bpy.context.scene.transform_orientation_slots[0].type = orientation
+        if 'FINISHED' not in result:
+            self.report({'WARNING'}, "Could not create an orientation from the selection")
+            return {'CANCELLED'}
+
+        selection_orientation = slot.custom_orientation.name
+        try:
+            try:
+                bpy.ops.object.mode_set(mode='OBJECT')
+                settings.use_transform_skip_children = True
+                settings.use_transform_data_origin = True
+                settings.use_keyframe_insert_auto = False
+
+                result = bpy.ops.transform.transform(mode='ALIGN', orient_type=selection_orientation)
+            finally:
+                settings.use_transform_skip_children = skip_children
+                settings.use_transform_data_origin = edit_origin
+                settings.use_keyframe_insert_auto = auto_keying
+                try:
+                    bpy.ops.transform.delete_orientation()
+                finally:
+                    slot.type = orientation
+
+            if 'FINISHED' not in result:
+                return {'CANCELLED'}
+
+            # Older Blender versions need an Object Mode checkpoint to restore both
+            # the object transform and mesh. Record it after temporary settings are restored.
+            if bpy.app.version < (5, 3, 0):
+                bpy.ops.ed.undo_push(message=self.bl_label)
+        finally:
+            if obj.mode != 'EDIT':
+                bpy.ops.object.mode_set(mode='EDIT')
 
         if obj.animation_data:
             self.report({'WARNING'}, 
@@ -78,7 +97,7 @@ class OBJECT_OT_orient_to_selection(Operator):
         return {'FINISHED'}
 
 def draw_menu(self, context):
-    if (bpy.context.scene.transform_orientation_slots[0].type == 'LOCAL' and bpy.context.edit_object):
+    if OBJECT_OT_orient_to_selection.poll(context):
         self.layout.separator()
         self.layout.operator(OBJECT_OT_orient_to_selection.bl_idname, icon="ORIENTATION_NORMAL")
 

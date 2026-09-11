@@ -23,30 +23,54 @@ along with this program; if not, see <https://www.gnu.org/licenses/>.
 
 
 import bpy
-from bpy.types import (Operator)
+from bpy.types import Operator
+
 
 class OBJECT_OT_origin_to_selection(Operator):
     bl_label = "Origin to Selected"
     bl_idname = "object.origin_to_selection"
     bl_description = "Snaps the object's origin to the selected components in Edit Mode"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
     bl_options = {'REGISTER', 'UNDO'}
 
+    @classmethod
+    def poll(cls, context):
+        return (
+            context.edit_object is not None
+            and context.area is not None
+            and context.area.type == 'VIEW_3D'
+        )
+
     def execute(self, context):
-        cursor = bpy.context.scene.cursor.location
-        cursor_location = [cursor[0], cursor[1], cursor[2]]
-        
-        bpy.ops.view3d.snap_cursor_to_selected()
-        bpy.ops.object.mode_set(mode='OBJECT')
-        bpy.ops.object.origin_set(type='ORIGIN_CURSOR', center='MEDIAN')
-        bpy.ops.object.mode_set(mode='EDIT')
-        bpy.context.scene.cursor.location = cursor_location
+        obj = context.edit_object
+        cursor = context.scene.cursor
+        cursor_location = cursor.location.copy()
+
+        try:
+            try:
+                result = bpy.ops.view3d.snap_cursor_to_selected()
+                if 'FINISHED' not in result:
+                    return {'CANCELLED'}
+
+                bpy.ops.object.mode_set(mode='OBJECT')
+                result = bpy.ops.object.origin_set(type='ORIGIN_CURSOR', center='MEDIAN')
+            finally:
+                cursor.location = cursor_location
+
+            if 'FINISHED' not in result:
+                return {'CANCELLED'}
+
+            # Older Blender versions need an Object Mode checkpoint to restore both
+            # the object transform and geometry. Restore the cursor before recording it.
+            if bpy.app.version < (5, 3, 0):
+                bpy.ops.ed.undo_push(message=self.bl_label)
+        finally:
+            if obj.mode != 'EDIT':
+                bpy.ops.object.mode_set(mode='EDIT')
 
         return {'FINISHED'}
 
 def draw_menu(self, context):
-    if bpy.context.edit_object:
+    if OBJECT_OT_origin_to_selection.poll(context):
         self.layout.separator()
         self.layout.operator(OBJECT_OT_origin_to_selection.bl_idname)
 
