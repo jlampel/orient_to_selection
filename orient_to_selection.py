@@ -80,7 +80,6 @@ class OBJECT_OT_orient_to_selection(Operator):
             and context.mode in {'EDIT_MESH', 'OBJECT'}
             and context.area is not None
             and context.area.type == 'VIEW_3D'
-            and context.scene.transform_orientation_slots[0].type == 'LOCAL'
         )
 
     def draw(self, context):
@@ -168,7 +167,6 @@ class OBJECT_OT_orient_to_selection(Operator):
 
             context.scene.transform_orientation_slots[0].type = 'LOCAL'
 
-
         finally:
             if obj.mode != 'EDIT':
                 bpy.ops.object.mode_set(mode='EDIT')
@@ -186,7 +184,6 @@ def draw_menu(self, context):
         self.layout.operator(OBJECT_OT_orient_to_selection.bl_idname, icon="ORIENTATION_NORMAL")
 
 def draw_orientation_menu(self, context):
-    if context.scene.transform_orientation_slots[0].type == 'LOCAL':
         draw_menu(self, context)
 
 
