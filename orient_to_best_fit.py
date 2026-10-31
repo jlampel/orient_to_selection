@@ -28,14 +28,9 @@ import numpy as np
 from bpy.types import Operator
 from bpy.props import BoolProperty, EnumProperty
 from itertools import permutations, product
-from math import pi, radians
 from mathutils import Matrix, Vector, geometry
 from .utilities import AXES, align_to_matrix, resolve_axes
 
-
-MAX_HULL_FACES = 1000
-MAX_SAMPLE_POINTS = 2000
-FINALISTS = 8
 
 AUTO_AXES = [('AUTO', "Auto", "Use the local axis closest to the current orientation"), *AXES]
 
@@ -74,30 +69,57 @@ def convex_hull(points):
         mesh.vertices.add(len(points))
         mesh.vertices.foreach_set("co", points.astype(np.float32).ravel())
         bm.from_mesh(mesh)
-        geom = bmesh.ops.convex_hull(bm, input=bm.verts)['geom']
-        hull = np.array([vert.co for vert in geom if isinstance(vert, bmesh.types.BMVert)])
-
-        # Dense hulls are simplified by merging faces, flattest areas first
-        # Their verts were already collected so the box still fits them all
-        angle = radians(1)
-        while len(bm.faces) > MAX_HULL_FACES and angle < pi:
-            bmesh.ops.dissolve_limit(bm, angle_limit=angle, verts=[], edges=bm.edges[:])
-            angle *= 2
-        bm.normal_update()
-        normals = np.array([face.normal for face in bm.faces]).reshape(-1, 3)
+        bmesh.ops.convex_hull(bm, input=bm.verts)
+        # Reading the hull back through a mesh is much faster than looping over its bm elements
+        bm.to_mesh(mesh)
+        co = np.empty(len(mesh.vertices) * 3, dtype=np.float32)
+        corners = np.empty(len(mesh.loops), dtype=np.int32)
+        normals = np.empty(len(mesh.polygons) * 3, dtype=np.float32)
+        areas = np.empty(len(mesh.polygons), dtype=np.float32)
+        mesh.vertices.foreach_get("co", co)
+        mesh.loops.foreach_get("vertex_index", corners)
+        mesh.polygons.foreach_get("normal", normals)
+        mesh.polygons.foreach_get("area", areas)
     finally:
         bm.free()
         bpy.data.meshes.remove(mesh)
 
-    normals = normals[np.linalg.norm(normals, axis=1) > 0.5]
+    hull = co.reshape(-1, 3)[np.unique(corners)]
+    normals = normals.reshape(-1, 3)
+    valid = (areas > 0) & (np.linalg.norm(normals, axis=1) > 0.5)
+    normals, areas = normals[valid], areas[valid]
     if not len(normals):
         return hull, normals
 
     # Opposite faces fit the same box and flat sides of the hull are split into tris, so normals repeat
     largest = np.abs(normals).argmax(axis=1)
     normals *= np.sign(normals[np.arange(len(normals)), largest])[:, None]
-    _, first = np.unique(np.round(normals, 4), axis=0, return_index=True)
-    return hull, normals[np.sort(first)]
+    keys = np.round(normals * 1e4).astype(np.int64) + 10000
+    keys = keys[:, 0] << 30 | keys[:, 1] << 15 | keys[:, 2]
+    _, first, groups = np.unique(keys, return_index=True, return_inverse=True)
+    normals, areas = normals[first], np.bincount(groups.ravel(), weights=areas)
+
+    max_normals = 1000
+    if len(normals) > max_normals:
+        # Dense hulls are simplified by splitting the directions into a grid of regions
+        # and keeping the normal that covers the most area in each one.
+        # Octahedral mapping unfolds the sphere of directions into a square.
+        flat = normals[:, :2] / np.abs(normals).sum(axis=1)[:, None]
+        lower = normals[:, 2] < 0
+        flat[lower] = (1 - np.abs(flat[lower][:, ::-1])) * np.where(flat[lower] < 0, -1, 1)
+        largest_first = np.argsort(-areas, kind='stable')
+        # Opposite normals were merged so about half of the cells are used
+        grid = int(np.sqrt(2 * max_normals)) + 1
+        keep = largest_first
+        while len(keep) > max_normals:
+            grid -= 1
+            cells = np.clip(((flat + 1) / 2 * grid).astype(np.int64), 0, grid - 1)
+            cells = cells[:, 0] * grid + cells[:, 1]
+            _, first = np.unique(cells[largest_first], return_index=True)
+            keep = largest_first[np.sort(first)]
+        normals = normals[keep]
+
+    return hull, normals
 
 
 def fit_box(points, normal, scale):
@@ -115,6 +137,35 @@ def fit_box(points, normal, scale):
     area = dimensions @ np.roll(dimensions, 1)
     # Surface area breaks ties between flat boxes with no volume
     return volume + area * scale * 1e-6, axes
+
+
+def rough_sizes(points, normals, scale):
+    ''' Estimates the size of the smallest box along each normal by
+    trying a fixed set of rotations around each normal '''
+    rotations = 16
+    normals = np.array(normals)
+    # Any vector that isn't parallel to a normal gives a direction across it
+    helpers = np.where(np.abs(normals[:, :1]) < 0.9, [[1.0, 0.0, 0.0]], [[0.0, 1.0, 0.0]])
+    u = np.cross(normals, helpers)
+    u /= np.linalg.norm(u, axis=1)[:, None]
+    v = np.cross(normals, u)
+    # Half turn of directions, so each one has another at right angles to it
+    angles = np.arange(2 * rotations) * np.pi / (2 * rotations)
+    directions = np.cos(angles)[None, :, None] * u[:, None] + np.sin(angles)[None, :, None] * v[:, None]
+    directions = directions.astype(np.float32)
+    points = points.astype(np.float32)
+    widths = np.empty((len(normals), 2 * rotations), dtype=np.float32)
+    # Chunks keep the array of every point measured along every direction small
+    for start in range(0, len(normals), 128):
+        chunk = directions[start:start + 128]
+        reach = points @ chunk.reshape(-1, 3).T
+        widths[start:start + 128] = np.ptp(reach, axis=0).reshape(len(chunk), -1)
+    best = (widths[:, :rotations] * widths[:, rotations:]).argmin(axis=1)
+    rows = np.arange(len(normals))
+    depths = np.ptp(points @ normals.T.astype(np.float32), axis=0)
+    dimensions = np.stack([widths[rows, best], widths[rows, best + rotations], depths])
+    # Surface area breaks ties
+    return dimensions.prod(axis=0) + (dimensions * np.roll(dimensions, 1, axis=0)).sum(axis=0) * scale * 1e-6
 
 
 def best_fit_axes(points):
@@ -137,11 +188,18 @@ def best_fit_axes(points):
                 points = hull
             candidates += list(normals)
 
-    # Fitting every candidate to a dense hull is slow, so a sample of its points narrows them down first
-    if len(points) > MAX_SAMPLE_POINTS:
-        sample = points[::len(points) // MAX_SAMPLE_POINTS + 1]
+    # Fitting every candidate exactly is slow, so they're narrowed down in stages:
+    # 1. A rough fit of all of them to a sample of the points
+    # 2. An exact fit of the best ones to the sample
+    # 3. An exact fit to every point
+    sample_size, shortlist, finalists = 1000, 64, 8
+    sample = points[::len(points) // sample_size + 1]
+    if len(candidates) > shortlist:
+        sizes = rough_sizes(sample, candidates, scale)
+        candidates = [candidates[i] for i in np.argsort(sizes, kind='stable')[:shortlist]]
+    if len(points) > len(sample):
         candidates.sort(key=lambda normal: fit_box(sample, normal, scale)[0])
-        candidates = candidates[:FINALISTS]
+        candidates = candidates[:finalists]
 
     axes = min((fit_box(points, normal, scale) for normal in candidates), key=lambda fit: fit[0])[1]
     axes = axes[np.argsort(-np.ptp(points @ axes.T, axis=0), kind='stable')]
@@ -217,6 +275,9 @@ class OBJECT_OT_orient_to_best_fit(Operator):
 
         if not self.options.is_repeat:
             self.edit_mode = context.mode == 'EDIT_MESH'
+        # Redo starts from the same geo so reuse it. Blender keeps this operator instance for redo.
+        if not self.options.is_repeat or not hasattr(self, "fits"):
+            self.fits = {}
 
         resolve_axes(self, "main_axis", "secondary_axis")
 
@@ -237,6 +298,11 @@ class OBJECT_OT_orient_to_best_fit(Operator):
 
         return {'FINISHED'}
 
+    def fit(self, name, points):
+        if name not in self.fits:
+            self.fits[name] = best_fit_axes(points())
+        return self.fits[name]
+
     def orient_objects(self, context):
         view_layer = context.view_layer
         active = view_layer.objects.active
@@ -246,7 +312,7 @@ class OBJECT_OT_orient_to_best_fit(Operator):
         for obj in selected:
             if obj.type != 'MESH':
                 continue
-            axes = best_fit_axes(object_points(context, obj))
+            axes = self.fit(obj.name, lambda: object_points(context, obj))
             if axes is not None:
                 matrices[obj] = closest_rotation(axes, obj.matrix_world, self.main_axis, self.secondary_axis)
 
@@ -277,10 +343,9 @@ class OBJECT_OT_orient_to_best_fit(Operator):
         if obj.mode != 'EDIT':
             bpy.ops.object.mode_set(mode='EDIT')
 
-        points = np.concatenate([
+        axes = self.fit(obj.name, lambda: np.concatenate([
             selected_points(edit_obj) for edit_obj in context.objects_in_mode if edit_obj.type == 'MESH'
-        ])
-        axes = best_fit_axes(points)
+        ]))
         if axes is None:
             self.report({'WARNING'}, "Select at least two vertices that aren't in the same place")
             return {'CANCELLED'}
