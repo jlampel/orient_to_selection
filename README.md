@@ -9,6 +9,8 @@ There's also an **Object Origin to Pivot Point** operator in the Edit Mode -> Me
 
 ![origin-to-selected](https://user-images.githubusercontent.com/12982300/207934047-48733cd3-e4c7-4008-b1e8-d82facf6d9e5.gif)
 
+**Orient Local to Best Fit** in the Snap menu (in both modes) aligns the local axes with the smallest box that fits the object. In Object Mode it fits each selected object separately. In Edit Mode it fits the selected components. By default, each box axis goes to the local axis it's closest to. The redo panel's **Main Axis** and **Secondary Axis** allow you to choose which local axes follow the longest and second longest sides of the box instead.
+
 In Object Mode, use **Object > Snap > Orient to Active** to give all selected objects the same local orientation as the active object. It is also available in the Transform Orientations dropdown.
 
 **Object > Snap > Active Origin to Pivot Point** moves the active object's origin to the current pivot point. Individual Origins falls back to Median Point.

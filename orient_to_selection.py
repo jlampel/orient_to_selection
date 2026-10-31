@@ -26,26 +26,7 @@ import bpy
 from bpy.types import Operator
 from bpy.props import EnumProperty
 from mathutils import Matrix
-from .utilities import align_to_matrix
-
-
-AXES = [
-    ('POS_X', "X", ""),
-    ('POS_Y', "Y", ""),
-    ('POS_Z', "Z", ""),
-    ('NEG_X', "-X", ""),
-    ('NEG_Y', "-Y", ""),
-    ('NEG_Z', "-Z", ""),
-]
-
-
-def resolve_axes(self, changed, other):
-    # Makes sure the two settings don't use the same axis
-    changed_axis = getattr(self, changed)
-    other_axis = getattr(self, other)
-    if changed_axis[-1] == other_axis[-1]:
-        free_axis = "XYZ"[("XYZ".index(changed_axis[-1]) + 1) % 3]
-        setattr(self, other, other_axis[:-1] + free_axis)
+from .utilities import AXES, align_to_matrix, resolve_axes
 
 
 class OBJECT_OT_orient_to_selection(Operator):
@@ -129,8 +110,6 @@ class OBJECT_OT_orient_to_selection(Operator):
                 return {'CANCELLED'}
             bpy.ops.object.mode_set(mode='EDIT')
 
-        # Update callbacks resolve conflicts as each property is set, so the last one set wins
-        # (for script arguments, the last keyword). This catches values stored without running them.
         resolve_axes(self, "normal_axis", "tangent_axis")
 
         try:

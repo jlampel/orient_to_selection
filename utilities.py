@@ -34,6 +34,25 @@ PIVOT_ICONS = {
 }
 
 
+AXES = [
+    ('POS_X', "X", ""),
+    ('POS_Y', "Y", ""),
+    ('POS_Z', "Z", ""),
+    ('NEG_X', "-X", ""),
+    ('NEG_Y', "-Y", ""),
+    ('NEG_Z', "-Z", ""),
+]
+
+
+def resolve_axes(self, changed, other):
+    # Makes sure the two settings don't use the same axis
+    changed_axis = getattr(self, changed)
+    other_axis = getattr(self, other)
+    if changed_axis != 'AUTO' and changed_axis[-1] == other_axis[-1]:
+        free_axis = "XYZ"[("XYZ".index(changed_axis[-1]) + 1) % 3]
+        setattr(self, other, other_axis[:-1] + free_axis)
+
+
 def snap_cursor_to_pivot(context):
     pivot_point = context.scene.tool_settings.transform_pivot_point
     if pivot_point == 'CURSOR':
