@@ -50,7 +50,9 @@ def resolve_axes(self, changed, other):
 class OBJECT_OT_orient_to_selection(Operator):
     bl_label = "Orient to Selected"
     bl_idname = "object.orient_to_selection"
-    bl_description = "Aligns the object's local axes with the normals of the selected mesh"
+    bl_description = (
+        "Aligns the object's local axes with the normals of the selected mesh and switches to Local orientation"
+    )
     bl_options = {'REGISTER', 'UNDO'}
 
     normal_axis: EnumProperty(
@@ -164,6 +166,14 @@ class OBJECT_OT_orient_to_selection(Operator):
 
             if 'FINISHED' not in result:
                 return {'CANCELLED'}
+
+            # Show the updated axes, including when invoked from the Snap menu.
+            slot.type = 'LOCAL'
+
+            # Older Blender versions need an Object Mode checkpoint to restore both
+            # the object transform and mesh. Record it after temporary settings are restored.
+            if bpy.app.version < (5, 3, 0):
+                bpy.ops.ed.undo_push(message=self.bl_label)
         finally:
             if obj.mode != 'EDIT':
                 bpy.ops.object.mode_set(mode='EDIT')
@@ -180,10 +190,18 @@ def draw_menu(self, context):
         self.layout.separator()
         self.layout.operator(OBJECT_OT_orient_to_selection.bl_idname, icon="ORIENTATION_NORMAL")
 
+def draw_orientation_menu(self, context):
+    if context.scene.transform_orientation_slots[0].type == 'LOCAL':
+        draw_menu(self, context)
+
+
 def register():
     bpy.utils.register_class(OBJECT_OT_orient_to_selection)
-    bpy.types.VIEW3D_PT_transform_orientations.append(draw_menu)
-
+    bpy.types.VIEW3D_PT_transform_orientations.append(draw_orientation_menu)
+    bpy.types.VIEW3D_MT_snap.append(draw_menu)
+    
 def unregister():
     bpy.utils.unregister_class(OBJECT_OT_orient_to_selection)
-    bpy.types.VIEW3D_PT_transform_orientations.remove(draw_menu)
+    bpy.types.VIEW3D_PT_transform_orientations.remove(draw_orientation_menu)
+    bpy.types.VIEW3D_MT_snap.remove(draw_menu)
+

@@ -26,7 +26,7 @@ bl_info = {
     "author": "Jonathan Lampel",
     "version": (1, 2),
     "blender": (3, 0, 0),
-    "location": "3D View > Edit Mode > Transform Orientations > Local",
+    "location": "3D View > Edit Mode > Mesh > Snap; Transform Orientations > Local",
     "description": "Aligns the object's orientation to the normal direction of your selection",
     "warning": "",
     "wiki_url": "",
@@ -44,4 +44,4 @@ def unregister():
     origin_to_selection.unregister()
 
 if __name__ == "__main__":
-    register() 
+    register()
