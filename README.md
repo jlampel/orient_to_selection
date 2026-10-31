@@ -1,6 +1,8 @@
 # Orient to Selection
  A small Blender addon for changing an object's local orientation while in edit mode.
 
+In mesh Edit Mode, use **Mesh > Snap > Orient to Selected**. The operator switches the transform orientation to **Local** so the updated axes are visible. It is also available under **Transform Orientations > Local**.
+
 ![uQhSN61npy](https://user-images.githubusercontent.com/12982300/127409850-6f22147a-0145-4229-aa50-e18ceb57171a.gif)
 
 There's also an Origin to Selection operator to the Edit Mode -> Mesh -> Snap menu.
