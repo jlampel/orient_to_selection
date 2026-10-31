@@ -24,10 +24,10 @@ along with this program; if not, see <https://www.gnu.org/licenses/>.
 bl_info = {
     "name": "Orient to Selected",
     "author": "Jonathan Lampel",
-    "version": (1, 2),
+    "version": (1, 3, 0),
     "blender": (3, 0, 0),
-    "location": "3D View > Edit Mode > Mesh > Snap; 3D View > Object > Snap; Transform Orientations > Local",
-    "description": "Aligns the object's orientation to the normal direction of your selection",
+    "location": "3D View > Edit Mode > Mesh > Snap; 3D View > Object > Snap; Transform Orientations",
+    "description": "Align object orientations and snap object origins to the selection",
     "warning": "",
     "wiki_url": "",
     "category": "3D View",
