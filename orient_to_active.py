@@ -24,6 +24,7 @@ along with this program; if not, see <https://www.gnu.org/licenses/>.
 
 import bpy
 from bpy.types import Operator
+from .utilities import align_to_matrix
 
 
 class OBJECT_OT_orient_to_active(Operator):
@@ -47,29 +48,11 @@ class OBJECT_OT_orient_to_active(Operator):
 
     def execute(self, context):
         active = context.active_object
-        settings = context.scene.tool_settings
-        edit_origin = settings.use_transform_data_origin
-        skip_children = settings.use_transform_skip_children
-        auto_keying = settings.use_keyframe_insert_auto
+        # Redo runs right after an undo, before matrix_world has been re-evaluated
+        context.evaluated_depsgraph_get()
 
         # Quaternion conversion drops scale and shear from the active obj's world matrix
-        matrix = active.matrix_world.to_quaternion().to_matrix()
-
-        try:
-            settings.use_transform_skip_children = True
-            settings.use_transform_data_origin = True
-            settings.use_keyframe_insert_auto = False
-
-            result = bpy.ops.transform.transform(
-                mode='ALIGN',
-                orient_type='GLOBAL',
-                orient_matrix=matrix,
-                orient_matrix_type='GLOBAL',
-            )
-        finally:
-            settings.use_transform_skip_children = skip_children
-            settings.use_transform_data_origin = edit_origin
-            settings.use_keyframe_insert_auto = auto_keying
+        result = align_to_matrix(context, active.matrix_world.to_quaternion().to_matrix())
 
         if 'FINISHED' not in result:
             return {'CANCELLED'}

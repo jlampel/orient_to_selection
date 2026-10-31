@@ -24,7 +24,7 @@ along with this program; if not, see <https://www.gnu.org/licenses/>.
 
 import bpy
 from bpy.types import Operator
-from .origin_to_pivot import PIVOT_ICONS, snap_cursor_to_pivot
+from .utilities import PIVOT_ICONS, snap_cursor_to_pivot
 
 
 class OBJECT_OT_origin_to_selection(Operator):

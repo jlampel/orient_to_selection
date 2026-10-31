@@ -26,6 +26,7 @@ import bpy
 from bpy.types import Operator
 from bpy.props import EnumProperty
 from mathutils import Matrix
+from .utilities import align_to_matrix
 
 
 AXES = [
@@ -122,17 +123,14 @@ class OBJECT_OT_orient_to_selection(Operator):
 
     def execute(self, context):
         obj = context.active_object
-        settings = context.scene.tool_settings
-        edit_origin = settings.use_transform_data_origin
-        skip_children = settings.use_transform_skip_children
-        auto_keying = settings.use_keyframe_insert_auto
 
         if obj.mode != 'EDIT':
             if not self.options.is_repeat:
                 return {'CANCELLED'}
             bpy.ops.object.mode_set(mode='EDIT')
 
-        # Update callbacks don't run for arguments passed to the operator from a script
+        # Update callbacks resolve conflicts as each property is set, so the last one set wins
+        # (for script arguments, the last keyword). This catches values stored without running them.
         resolve_axes(self, "normal_axis", "tangent_axis")
 
         try:
@@ -146,22 +144,8 @@ class OBJECT_OT_orient_to_selection(Operator):
             if bpy.app.version < (5, 3, 0) and not self.options.is_repeat:
                 bpy.ops.ed.undo_push(message=self.bl_label)
 
-            try:
-                settings.use_transform_skip_children = True
-                settings.use_transform_data_origin = True
-                settings.use_keyframe_insert_auto = False
-
-                result = bpy.ops.transform.transform(
-                    mode='ALIGN',
-                    orient_type='GLOBAL',
-                    orient_matrix=self.axis_matrix(matrix),
-                    orient_matrix_type='GLOBAL',
-                )
-            finally:
-                settings.use_transform_skip_children = skip_children
-                settings.use_transform_data_origin = edit_origin
-                settings.use_keyframe_insert_auto = auto_keying
-
+            # Runs after the checkpoint so its temporary orientation never ends up in an undo step
+            result = align_to_matrix(context, self.axis_matrix(matrix))
             if 'FINISHED' not in result:
                 return {'CANCELLED'}
 

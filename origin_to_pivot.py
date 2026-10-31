@@ -24,27 +24,7 @@ along with this program; if not, see <https://www.gnu.org/licenses/>.
 
 import bpy
 from bpy.types import Operator
-
-
-PIVOT_ICONS = {
-    'BOUNDING_BOX_CENTER': 'PIVOT_BOUNDBOX',
-    'CURSOR': 'PIVOT_CURSOR',
-    'INDIVIDUAL_ORIGINS': 'PIVOT_MEDIAN',
-    'MEDIAN_POINT': 'PIVOT_MEDIAN',
-    'ACTIVE_ELEMENT': 'PIVOT_ACTIVE',
-}
-
-
-def snap_cursor_to_pivot(context):
-    pivot_point = context.scene.tool_settings.transform_pivot_point
-    if pivot_point == 'CURSOR':
-        return {'FINISHED'}
-    if pivot_point == 'ACTIVE_ELEMENT':
-        # Falls back to the median when there is no active element
-        result = bpy.ops.view3d.snap_cursor_to_active()
-        if 'FINISHED' in result:
-            return result
-    return bpy.ops.view3d.snap_cursor_to_selected()
+from .utilities import PIVOT_ICONS, snap_cursor_to_pivot
 
 
 class OBJECT_OT_active_origin_to_pivot(Operator):
