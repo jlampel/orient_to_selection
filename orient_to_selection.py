@@ -127,9 +127,6 @@ class OBJECT_OT_orient_to_selection(Operator):
         edit_origin = settings.use_transform_data_origin
         skip_children = settings.use_transform_skip_children
         auto_keying = settings.use_keyframe_insert_auto
-        # Older Blender versions need an Object Mode checkpoint to restore both the object
-        # transform and mesh. Redo already starts from that checkpoint, so only record it once.
-        record_checkpoint = bpy.app.version < (5, 3, 0) and not self.options.is_repeat
 
         if obj.mode != 'EDIT':
             if not self.options.is_repeat:
@@ -145,7 +142,9 @@ class OBJECT_OT_orient_to_selection(Operator):
                 return {'CANCELLED'}
 
             bpy.ops.object.mode_set(mode='OBJECT')
-            if record_checkpoint:
+            # Older Blender versions need an Object Mode checkpoint to restore both the obj transform and mesh.
+            # Redo starts from this checkpoint.
+            if bpy.app.version < (5, 3, 0) and not self.options.is_repeat:
                 bpy.ops.ed.undo_push(message=self.bl_label)
 
             try:
@@ -167,13 +166,9 @@ class OBJECT_OT_orient_to_selection(Operator):
             if 'FINISHED' not in result:
                 return {'CANCELLED'}
 
-            # Show the updated axes, including when invoked from the Snap menu.
-            slot.type = 'LOCAL'
+            context.scene.transform_orientation_slots[0].type = 'LOCAL'
 
-            # Older Blender versions need an Object Mode checkpoint to restore both
-            # the object transform and mesh. Record it after temporary settings are restored.
-            if bpy.app.version < (5, 3, 0):
-                bpy.ops.ed.undo_push(message=self.bl_label)
+
         finally:
             if obj.mode != 'EDIT':
                 bpy.ops.object.mode_set(mode='EDIT')
@@ -199,9 +194,8 @@ def register():
     bpy.utils.register_class(OBJECT_OT_orient_to_selection)
     bpy.types.VIEW3D_PT_transform_orientations.append(draw_orientation_menu)
     bpy.types.VIEW3D_MT_snap.append(draw_menu)
-    
+
 def unregister():
     bpy.utils.unregister_class(OBJECT_OT_orient_to_selection)
     bpy.types.VIEW3D_PT_transform_orientations.remove(draw_orientation_menu)
     bpy.types.VIEW3D_MT_snap.remove(draw_menu)
-
