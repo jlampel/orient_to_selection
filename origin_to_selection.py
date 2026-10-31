@@ -3,9 +3,9 @@ Copyright (C) 2020-2023 Orange Turbine
 https://orangeturbine.com
 orangeturbine@cgcookie.com
 
-This file is part of Orient to Selection, created by Jonathan Lampel. 
+This file is part of Orient to Selection, created by Jonathan Lampel.
 
-All code distributed with this add-on is open source as described below. 
+All code distributed with this add-on is open source as described below.
 
 Orient to Selection is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -24,12 +24,13 @@ along with this program; if not, see <https://www.gnu.org/licenses/>.
 
 import bpy
 from bpy.types import Operator
+from .origin_to_pivot import PIVOT_ICONS, snap_cursor_to_pivot
 
 
 class OBJECT_OT_origin_to_selection(Operator):
-    bl_label = "Origin to Selected"
+    bl_label = "Object Origin to Pivot Point"
     bl_idname = "object.origin_to_selection"
-    bl_description = "Snaps the object's origin to the selected components in Edit Mode"
+    bl_description = "Moves the object's origin to the current transform pivot point in Edit Mode"
     bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
@@ -47,7 +48,7 @@ class OBJECT_OT_origin_to_selection(Operator):
 
         try:
             try:
-                result = bpy.ops.view3d.snap_cursor_to_selected()
+                result = snap_cursor_to_pivot(context)
                 if 'FINISHED' not in result:
                     return {'CANCELLED'}
 
@@ -71,8 +72,9 @@ class OBJECT_OT_origin_to_selection(Operator):
 
 def draw_menu(self, context):
     if OBJECT_OT_origin_to_selection.poll(context):
-        self.layout.separator()
-        self.layout.operator(OBJECT_OT_origin_to_selection.bl_idname)
+        # self.layout.separator()
+        pivot_point = context.scene.tool_settings.transform_pivot_point
+        self.layout.operator(OBJECT_OT_origin_to_selection.bl_idname, icon=PIVOT_ICONS[pivot_point])
 
 def register():
     bpy.utils.register_class(OBJECT_OT_origin_to_selection)

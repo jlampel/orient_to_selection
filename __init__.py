@@ -3,9 +3,9 @@ Copyright (C) 2020-2023 Orange Turbine
 https://orangeturbine.com
 orangeturbine@cgcookie.com
 
-This file is part of Orient to Selection, created by Jonathan Lampel. 
+This file is part of Orient to Selection, created by Jonathan Lampel.
 
-All code distributed with this add-on is open source as described below. 
+All code distributed with this add-on is open source as described below.
 
 Orient to Selection is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -26,21 +26,27 @@ bl_info = {
     "author": "Jonathan Lampel",
     "version": (1, 2),
     "blender": (3, 0, 0),
-    "location": "3D View > Edit Mode > Mesh > Snap; Transform Orientations > Local",
+    "location": "3D View > Edit Mode > Mesh > Snap; 3D View > Object > Snap; Transform Orientations > Local",
     "description": "Aligns the object's orientation to the normal direction of your selection",
     "warning": "",
     "wiki_url": "",
     "category": "3D View",
 }
 
-from . import orient_to_selection, origin_to_selection
+from . import orient_to_selection, orient_to_active, origin_to_pivot, origin_to_active, origin_to_selection
 
 def register():
     orient_to_selection.register()
+    orient_to_active.register()
+    origin_to_active.register()
+    origin_to_pivot.register()
     origin_to_selection.register()
 
 def unregister():
     orient_to_selection.unregister()
+    orient_to_active.unregister()
+    origin_to_active.unregister()
+    origin_to_pivot.unregister()
     origin_to_selection.unregister()
 
 if __name__ == "__main__":

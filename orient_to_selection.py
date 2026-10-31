@@ -48,7 +48,7 @@ def resolve_axes(self, changed, other):
 
 
 class OBJECT_OT_orient_to_selection(Operator):
-    bl_label = "Orient to Selected"
+    bl_label = "Orient Local to Normal"
     bl_idname = "object.orient_to_selection"
     bl_description = (
         "Aligns the object's local axes with the normals of the selected mesh and switches to Local orientation"
