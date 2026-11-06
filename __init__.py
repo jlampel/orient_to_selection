@@ -33,12 +33,13 @@ bl_info = {
     "category": "3D View",
 }
 
-from . import orient_to_selection, orient_to_active, orient_to_best_fit, origin_to_pivot, origin_to_active, origin_to_selection
+from . import orient_to_selection, orient_to_active, orient_to_best_fit, origin_to_pivot, origin_to_active, origin_to_selection, origin_to_visual_geometry
 
 def register():
     orient_to_selection.register()
     orient_to_active.register()
     orient_to_best_fit.register()
+    origin_to_visual_geometry.register()
     origin_to_active.register()
     origin_to_pivot.register()
     origin_to_selection.register()
@@ -50,6 +51,7 @@ def unregister():
     origin_to_active.unregister()
     origin_to_pivot.unregister()
     origin_to_selection.unregister()
+    origin_to_visual_geometry.unregister()
 
 if __name__ == "__main__":
     register()

@@ -27,7 +27,7 @@ from bpy.types import Operator
 
 
 class OBJECT_OT_origin_to_active(Operator):
-    bl_label = "Object Origins to Active"
+    bl_label = "Selected Origins to Active"
     bl_idname = "object.origin_to_active"
     bl_description = "Moves the origins of the selected objects to the active object's origin without moving their geometry"
     bl_options = {'REGISTER', 'UNDO'}

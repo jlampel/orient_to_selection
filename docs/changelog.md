@@ -8,9 +8,12 @@
 - Orient Local to Normal now has a redo panel where you can set which axis faces forwards
 - Origin to Selected was renamed to Object Origin to Pivot Point
     - It now uses the active pivot point instead of always using the median point
-- Four new operators for Object Mode were added
+- Five new operators for Object Mode were added
     - Orient Local to Active
     - Orient Local to Best Fit
         - Also works in Edit Mode as well, based on the selection
     - Object Origins to Active
     - Active Origin to Pivot Point
+    - Origin to Visual Geometry
+        - Takes modifiers into account when finding the center.
+        - You can use Median, Bounds, Mass, and Volume centers.

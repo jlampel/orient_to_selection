@@ -17,6 +17,8 @@ In Object Mode, use **Object > Snap > Orient to Active** to give all selected ob
 
 **Object > Snap > Origin to Active** moves the origins of all selected objects to the active object's origin.
 
+**Object > Snap > Origin to Visual Geometry** is like Blender's Origin to Geometry, but uses the geometry as it's shown in the viewport. It takes into account modifiers, geometry nodes, and instances. In the redo panel, you can use the object's Median Center, Bounds Center, Center of Mass, or Center of Volume, just like Blender.
+
 If you'd like to support development of this and similar add-ons, please consider purchasing the add-on from our website or the Blender Market:
 
 [blendermarket.com/products/orient-and-origin-to-selected](https://blendermarket.com/products/orient-and-origin-to-selected)
