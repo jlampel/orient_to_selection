@@ -22,7 +22,7 @@ along with this program; if not, see <https://www.gnu.org/licenses/>.
 '''
 
 bl_info = {
-    "name": "Orient to Selected",
+    "name": "Orient and Origin to Selected",
     "author": "Jonathan Lampel",
     "version": (1, 3, 0),
     "blender": (3, 0, 0),
