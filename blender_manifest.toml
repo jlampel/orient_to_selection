@@ -1,6 +1,6 @@
 schema_version = "1.0.0"
 
-id = "orient_to_selection"
+id = "orient_and_origin_to_selected"
 version = "1.3.0"
 name = "Orient and Origin to Selected"
 tagline = "Align orientations and snap origins to the selection"
